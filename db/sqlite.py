@@ -1,6 +1,8 @@
 import sqlite3
 from contextlib import closing
+
 import utils.utils as utils
+
 
 class SQLiteClient:
     def __init__(self, db_path="songs.db"):
@@ -10,7 +12,8 @@ class SQLiteClient:
 
     def create_tables(self):
         with closing(self.conn.cursor()) as cur:
-            cur.execute("""
+            cur.execute(
+                """
                 CREATE TABLE IF NOT EXISTS songs (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     title TEXT NOT NULL,
@@ -18,15 +21,18 @@ class SQLiteClient:
                     ytID TEXT,
                     key TEXT NOT NULL UNIQUE
                 );
-            """)
-            cur.execute("""
+            """
+            )
+            cur.execute(
+                """
                 CREATE TABLE IF NOT EXISTS fingerprints (
                     address INTEGER NOT NULL,
                     anchorTimeMs INTEGER NOT NULL,
                     songID INTEGER NOT NULL,
                     PRIMARY KEY (address, anchorTimeMs, songID)
                 );
-            """)
+            """
+            )
         self.conn.commit()
 
     def close(self):
@@ -35,19 +41,27 @@ class SQLiteClient:
     def store_fingerprints(self, fingerprints: dict):
         with closing(self.conn.cursor()) as cur:
             for address, couple in fingerprints.items():
-                cur.execute("""
+                cur.execute(
+                    """
                     INSERT OR REPLACE INTO fingerprints (address, anchorTimeMs, songID)
                     VALUES (?, ?, ?)
-                """, (address, couple.anchor_time_ms, couple.song_id))
+                """,
+                    (address, couple.anchor_time_ms, couple.song_id),
+                )
         self.conn.commit()
 
     def get_couples(self, addresses):
         couples = {}
         with closing(self.conn.cursor()) as cur:
             for address in addresses:
-                cur.execute("SELECT anchorTimeMs, songID FROM fingerprints WHERE address = ?", (address,))
+                cur.execute(
+                    "SELECT anchorTimeMs, songID FROM fingerprints WHERE address = ?",
+                    (address,),
+                )
                 rows = cur.fetchall()
-                couples[address] = [{"anchor_time_ms": r[0], "song_id": r[1]} for r in rows]
+                couples[address] = [
+                    {"anchor_time_ms": r[0], "song_id": r[1]} for r in rows
+                ]
         return couples
 
     def total_songs(self):
@@ -56,14 +70,17 @@ class SQLiteClient:
             return cur.fetchone()[0]
 
     def register_song(self, title, artists, ytID):
-        artist=",".join(artists)
+        artist = ",".join(artists)
         song_key = utils.generate_song_key(title, artist)
         try:
             with closing(self.conn.cursor()) as cur:
-                cur.execute("""
+                cur.execute(
+                    """
                     INSERT INTO songs (title, artist, ytID, key)
                     VALUES (?, ?, ?, ?)
-                """, (title, artist, ytID, song_key))
+                """,
+                    (title, artist, ytID, song_key),
+                )
             self.conn.commit()
             return cur.lastrowid
         except sqlite3.IntegrityError:

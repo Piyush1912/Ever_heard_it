@@ -1,5 +1,7 @@
 import os
+
 from db.sqlite import SQLiteClient
+
 # from db.mongo import MongoClient  # Uncomment when you implement mongo.py
 
 
@@ -22,7 +24,9 @@ def new_db_client():
         db_port = get_env("DB_PORT", "27017")
 
         if db_username and db_password:
-            db_uri = f"mongodb://{db_username}:{db_password}@{db_host}:{db_port}/{db_name}"
+            db_uri = (
+                f"mongodb://{db_username}:{db_password}@{db_host}:{db_port}/{db_name}"
+            )
         else:
             db_uri = "mongodb://localhost:27017"
 

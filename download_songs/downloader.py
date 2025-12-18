@@ -1,18 +1,18 @@
-import os
-
-import subprocess
 import concurrent.futures
 import logging
+import os
+import subprocess
 import time
 from pathlib import Path
 
-
 from db.client import new_db_client
+from download_songs.utilsD import delete_file, song_key_exists
 from fingerprint import fingerprint_audio
 from utils.utils import generate_song_key
-from download_songs.utilsD import delete_file,song_key_exists
-from .youtube import get_youtube_id,download_ytaudio
-from .spotify import track_info,playlist_info,album_info
+
+from .spotify import album_info, playlist_info, track_info
+from .youtube import download_ytaudio, get_youtube_id
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("spotify")
 
@@ -30,7 +30,7 @@ class Track:
 
 def dl_single_track(url, save_path):
     logger.info("Getting track info", extra={"url": url})
-    track_in = track_info(url)  
+    track_in = track_info(url)
     tracks = [track_in]
     logger.info("Now downloading track")
     return dl_tracks(tracks, save_path)
@@ -104,12 +104,20 @@ def process_track(track, path):
 def add_tags(file, track):
     temp_file = file.replace(".wav", "2.wav")
     cmd = [
-        "ffmpeg", "-i", file, "-c", "copy",
-        "-metadata", f"album_artist={track.artist}",
-        "-metadata", f"title={track.title}",
-        "-metadata", f"artist={track.artist}",
-        "-metadata", f"album={track.album or ''}",
-        temp_file
+        "ffmpeg",
+        "-i",
+        file,
+        "-c",
+        "copy",
+        "-metadata",
+        f"album_artist={track.artist}",
+        "-metadata",
+        f"title={track.title}",
+        "-metadata",
+        f"artist={track.artist}",
+        "-metadata",
+        f"album={track.album or ''}",
+        temp_file,
     ]
     try:
         out = subprocess.run(cmd, capture_output=True, text=True)
@@ -129,7 +137,9 @@ def process_and_save_song(song_file_path, song_title, song_artist, yt_id):
         song_id = dbclient.register_song(song_title, song_artist, yt_id)
         fingerprint = fingerprint_audio(song_file_path, song_id)
         dbclient.store_fingerprints(fingerprint)
-        logger.info(f"Fingerprint for {song_title} by {song_artist} saved in DB successfully")
+        logger.info(
+            f"Fingerprint for {song_title} by {song_artist} saved in DB successfully"
+        )
         return True
     except Exception as e:
         logger.error(f"Failed to process song {song_title}: {e}")

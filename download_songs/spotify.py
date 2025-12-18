@@ -1,14 +1,15 @@
+import json
+import math
 import os
 import re
-import math
 import time
-import json
-import requests
 from dataclasses import dataclass
 from typing import List, Optional
-from dotenv import find_dotenv,load_dotenv
 
-dotenv_path=find_dotenv()
+import requests
+from dotenv import find_dotenv, load_dotenv
+
+dotenv_path = find_dotenv()
 
 load_dotenv(dotenv_path=dotenv_path)
 # Constants
@@ -40,6 +41,7 @@ class ResourceEndpoint:
 # Authentication and Token Handling
 # -------------------------------
 
+
 def load_credentials():
     client_id = os.getenv("CLIENT_ID", "")
     client_secret = os.getenv("CLIENT_SECRET", "")
@@ -49,10 +51,7 @@ def load_credentials():
 
 
 def save_token(token: str, expires_in: int):
-    ct = {
-        "token": token,
-        "expires_at": (time.time() + expires_in)
-    }
+    ct = {"token": token, "expires_at": (time.time() + expires_in)}
     with open(CACHED_TOKEN_PATH, "w") as f:
         json.dump(ct, f, indent=2)
 
@@ -91,6 +90,7 @@ def access_token() -> str:
 # Request Helper
 # -------------------------------
 
+
 def request(endpoint: str):
     bearer = access_token()
     headers = {"Authorization": f"Bearer {bearer}"}
@@ -111,8 +111,11 @@ def is_valid_pattern(url: str, pattern: str) -> bool:
 # Track Info
 # -------------------------------
 
+
 def track_info(url: str) -> Track:
-    re_track = re.compile(r"open\.spotify\.com\/(?:intl-.+\/)?track\/([a-zA-Z0-9]{22})(\?si=[a-zA-Z0-9]{16})?")
+    re_track = re.compile(
+        r"open\.spotify\.com\/(?:intl-.+\/)?track\/([a-zA-Z0-9]{22})(\?si=[a-zA-Z0-9]{16})?"
+    )
     matches = re_track.findall(url)
     if not matches:
         raise ValueError("Invalid track URL")
@@ -139,6 +142,7 @@ def track_info(url: str) -> Track:
 # Playlist Info
 # -------------------------------
 
+
 def playlist_info(url: str) -> List[Track]:
     re_playlist = re.compile(r"open\.spotify\.com\/playlist\/([a-zA-Z0-9]{22})")
     matches = re_playlist.findall(url)
@@ -160,13 +164,15 @@ def playlist_info(url: str) -> List[Track]:
         for item in result["items"]:
             track = item["track"]
             artists = [a["name"] for a in track["artists"]]
-            all_tracks.append(Track(
-                title=track["name"],
-                artist=artists[0],
-                artists=artists,
-                duration=track["duration_ms"] // 1000,
-                album=track["album"]["name"]
-            ))
+            all_tracks.append(
+                Track(
+                    title=track["name"],
+                    artist=artists[0],
+                    artists=artists,
+                    duration=track["duration_ms"] // 1000,
+                    album=track["album"]["name"],
+                )
+            )
 
         offset += limit
         if offset >= result["total"]:
@@ -178,6 +184,7 @@ def playlist_info(url: str) -> List[Track]:
 # -------------------------------
 # Album Info
 # -------------------------------
+
 
 def album_info(url: str) -> List[Track]:
     re_album = re.compile(r"open\.spotify\.com\/album\/([a-zA-Z0-9]{22})")
@@ -195,11 +202,13 @@ def album_info(url: str) -> List[Track]:
     tracks = []
     for item in result["items"]:
         artists = [a["name"] for a in item["artists"]]
-        tracks.append(Track(
-            title=item["name"],
-            artist=artists[0],
-            artists=artists,
-            duration=item["duration_ms"] // 1000,
-            album=""  # could fetch full album info if needed
-        ))
+        tracks.append(
+            Track(
+                title=item["name"],
+                artist=artists[0],
+                artists=artists,
+                duration=item["duration_ms"] // 1000,
+                album="",  # could fetch full album info if needed
+            )
+        )
     return tracks
