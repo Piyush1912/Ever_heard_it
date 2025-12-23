@@ -49,7 +49,8 @@ def find_matches_fgp(sample_fingerprint):
 
             target_zones.setdefault(song_id, {})
             target_zones[song_id][db_time] = target_zones[song_id].get(db_time, 0) + 1
-    scores = analyse_relative_timing(matches)
+    matches_new=filter_matches(5,matches,target_zones)
+    scores = analyse_relative_timing(matches_new)
     match_list = []
     for song_id, score in scores.items():
         song = db.get_song_by_id(song_id)
@@ -64,6 +65,7 @@ def find_matches_fgp(sample_fingerprint):
                     score,
                 )
             )
+   
     match_list.sort(key=operator.attrgetter("score"), reverse=True)
     elapsed = time.time() - start_time
     return match_list, elapsed, None
